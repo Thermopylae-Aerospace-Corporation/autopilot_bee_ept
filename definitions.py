@@ -8,3 +8,7 @@ default_pitch = 1500
 default_yaw = 1500
 default_throttle = 1000
 default_servo_aux2 = 1000
+
+objection_detection_threshold = 45 # avg. value of pixels in grayscale
+object_detected_throttle = 1500 
+object_detection_duration = 2.0
