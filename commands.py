@@ -15,7 +15,7 @@ command_target_ids = {
     'MSP_RC': msp.MSP_RC
 }
 
-serial_port = {}
+connection = None  # Will hold either serial or websocket connection
 
 def wait_for_execution(target, delay=0):
     if delay == 0:
@@ -24,32 +24,43 @@ def wait_for_execution(target, delay=0):
 
 def get_target_id(target):
     return int(command_target_ids.get(target))
-    
+
 def connect():
-    global serial_port
-    serial_port = serial.Serial(
-        vars.companion_computer, 
-        vars.companion_baud_rate, 
-        timeout=1)
+    """Establish connection based on CONNECTION_MODE (SITL or HARDWARE)"""
+    global connection
+
+    if vars.CONNECTION_MODE == 'SITL':
+        # TCP socket connection for SITL (wrapped as serial)
+        # SITL provides raw TCP socket on port 5761, not WebSocket
+        connection = serial.serial_for_url(vars.companion_computer, timeout=1)
+    else:
+        # Serial connection for hardware
+        connection = serial.Serial(
+            vars.companion_computer,
+            vars.companion_baud_rate,
+            timeout=1)
 
 def disconnect():
-    serial_port.close()
+    """Close connection for both SITL and HARDWARE"""
+    if connection:
+        connection.close()
 
 def reboot():
+    """Reconnect for both SITL and HARDWARE"""
     disconnect()
     time.sleep(1)
     connect()
 
 def set_row_rc(roll, pitch, yaw, throttle, servo_aux):
     # ROLL/PITCH/THROTTLE/YAW/AUX1/AUX2/AUX3/AUX4
-    data = [roll, 
-            pitch, 
-            throttle, 
-            yaw, 0, 
+    data = [roll,
+            pitch,
+            throttle,
+            yaw, 0,
             servo_aux, 0, 0]
-    msp.send_msp_command(serial_port, msp.MSP_SET_RAW_RC, data)
-    
-    msp_command_id, payload = msp.read_msp_response(serial_port)
+    msp.send_msp_command(connection, msp.MSP_SET_RAW_RC, data)
+
+    msp_command_id, payload = msp.read_msp_response(connection)
     if msp_command_id != msp.MSP_SET_RAW_RC:
         return False
     return True
@@ -66,9 +77,9 @@ def copter_init():
 
 def telemetry(target):
     msp_target_command_id = get_target_id(target)
-    msp.send_msp_request(serial_port, msp_target_command_id)
+    msp.send_msp_request(connection, msp_target_command_id)
     time.sleep(0.1)
-    msp_command_id, payload = msp.read_msp_response(serial_port)
+    msp_command_id, payload = msp.read_msp_response(connection)
     if msp_command_id == msp_target_command_id:
         return payload
 
