@@ -87,6 +87,42 @@ def command_telemetry_viable_status(telemetry):
             messages.command_telemetry_current_altitude, 
             [altitude])
 
+def command_telemetry_raw_imu(telemetry):
+    # MSP_RAW_IMU: acc[xyz] (3x int16), gyro[xyz] (3x int16), mag[xyz] (3x int16)
+    acc_x, acc_y, acc_z = struct.unpack('<hhh', telemetry[0:6])
+    gyro_x, gyro_y, gyro_z = struct.unpack('<hhh', telemetry[6:12])
+    mag_x, mag_y, mag_z = struct.unpack('<hhh', telemetry[12:18])
+
+    autopilot.state['acc_x'] = acc_x
+    autopilot.state['acc_y'] = acc_y
+    autopilot.state['acc_z'] = acc_z
+    autopilot.state['gyro_x'] = gyro_x
+    autopilot.state['gyro_y'] = gyro_y
+    autopilot.state['gyro_z'] = gyro_z
+    autopilot.state['mag_x'] = mag_x
+    autopilot.state['mag_y'] = mag_y
+    autopilot.state['mag_z'] = mag_z
+
+    messages.display(
+        messages.command_telemetry_current_imu,
+        [acc_x, acc_y, acc_z, gyro_x, gyro_y, gyro_z, mag_x, mag_y, mag_z])
+
+def command_telemetry_attitude(telemetry):
+    # MSP_ATTITUDE: roll (int16, 0.1 deg), pitch (int16, 0.1 deg), yaw (int16, deg)
+    roll_raw, pitch_raw, yaw_raw = struct.unpack('<hhh', telemetry[0:6])
+
+    roll = roll_raw / 10.0  # Convert to degrees
+    pitch = pitch_raw / 10.0  # Convert to degrees
+    yaw = yaw_raw  # Already in degrees
+
+    autopilot.state['attitude_roll'] = roll
+    autopilot.state['attitude_pitch'] = pitch
+    autopilot.state['attitude_yaw'] = yaw
+
+    messages.display(
+        messages.command_telemetry_current_attitude,
+        [roll, pitch, yaw])
+
 def command_telemetry_mode_change(telemetry):
     previous_throttle = autopilot.state['throttle']
     rc_chs = struct.unpack('<' + 'H' * (len(telemetry) // 2), telemetry)
@@ -99,7 +135,7 @@ def command_telemetry_mode_change(telemetry):
     autopilot.state['aux2'] = rc_chs[5]
     autopilot.state['aux3'] = rc_chs[6]
     autopilot.state['aux4'] = rc_chs[7]
-    
+
     aux3_raw = int(autopilot.state['aux3'])
     autopilot_mode = autopilot.state['bee_state']
     if aux3_raw == 1000:
@@ -109,7 +145,7 @@ def command_telemetry_mode_change(telemetry):
         time.sleep(0.1)
     elif aux3_raw == 2000:
         autopilot_mode = 'READY'
-    
+
     if autopilot_mode != autopilot.state['bee_state']:
         autopilot.state['bee_state'] = autopilot_mode
         messages.display(
@@ -120,15 +156,19 @@ def command_telemetry(params):
     try:
         telemetry = mavs.telemetry(params['target'])
         messages.display(messages.command_telemetry_log, [telemetry])
- 
+
         if telemetry != {}:
+            if params['target'] == 'MSP_RAW_IMU':
+                command_telemetry_raw_imu(telemetry)
+            if params['target'] == 'MSP_ATTITUDE':
+                command_telemetry_attitude(telemetry)
             if params['target'] == 'MSP_ALTITUDE':
                 command_telemetry_viable_status(telemetry)
             if params['target'] == 'MSP_RC':
                 command_telemetry_mode_change(telemetry)
-                        
+
         messages.display(
-            messages.command_telemetry_autopilot_state, 
+            messages.command_telemetry_autopilot_state,
             [autopilot.state])
     except Exception as ex:
         messages.display(

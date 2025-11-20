@@ -10,6 +10,8 @@ command_delays =  {
 }
 
 command_target_ids = {
+    'MSP_RAW_IMU': msp.MSP_RAW_IMU,
+    'MSP_ATTITUDE': msp.MSP_ATTITUDE,
     'MSP_ANALOG': msp.MSP_ANALOG,
     'MSP_ALTITUDE': msp.MSP_ALTITUDE,
     'MSP_RC': msp.MSP_RC

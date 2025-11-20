@@ -17,10 +17,12 @@ def telemetry_requestor(stop_command):
         messages.display(messages.telemetry_process_connected, [vars.companion_computer])
 
     while not stop_command.is_set():
-        try:            
+        try:
             # if int(autopilot.state['altitude']) > 1:
             router.put_command(router.Command(2,'MONITOR',{'target':'MSP_ANALOG'}))
-            
+
+            router.put_command(router.Command(2,'TELEMETRY',{'target':'MSP_RAW_IMU'}))
+            router.put_command(router.Command(2,'TELEMETRY',{'target':'MSP_ATTITUDE'}))
             router.put_command(router.Command(2,'TELEMETRY',{'target':'MSP_ALTITUDE'}))
             router.put_command(router.Command(1,'TELEMETRY',{'target':'MSP_RC'}))
             time.sleep(4)

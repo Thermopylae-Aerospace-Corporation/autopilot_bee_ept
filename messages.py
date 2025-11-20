@@ -50,6 +50,16 @@ command_telemetry_current_altitude = {
     "console": "current altitude: - \033[93m[{0} m]\033[0m"
     }
 
+command_telemetry_current_imu = {
+    "log_info": "IMU - acc:[{0}, {1}, {2}], gyro:[{3}, {4}, {5}], mag:[{6}, {7}, {8}]",
+    "console": "IMU - acc:\033[93m[{0}, {1}, {2}]\033[0m, gyro:\033[93m[{3}, {4}, {5}]\033[0m, mag:\033[93m[{6}, {7}, {8}]\033[0m"
+    }
+
+command_telemetry_current_attitude = {
+    "log_info": "Attitude - roll:[{0}°], pitch:[{1}°], yaw:[{2}°]",
+    "console": "Attitude - roll:\033[93m[{0}°]\033[0m, pitch:\033[93m[{1}°]\033[0m, yaw:\033[93m[{2}°]\033[0m"
+    }
+
 command_telemetry_autopilot_state = {
     "log_info": "Autopilot state: {0}",
     "console": "AUTOPILOT STATE: \033[95m{0}\033[0m"
